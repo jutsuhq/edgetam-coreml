@@ -127,6 +127,9 @@ stock EdgeTAM, which shows what that design choice costs.
 | fp32, CPU | stock | 0.836 / 0.983 | 0.792 | 0.487 | 0 of 5 | 15 of 15 |
 | fp16 (shipped), GPU | stock | 0.836 / 0.984 | 0.791 | 0.488 | 0 of 5 | 15 of 15 |
 | fp16 (shipped), Neural Engine | stock | 0.894 / 0.986 | 0.798 | 0.479 | 0 of 5 | 15 of 15 |
+| `--mask-empty-slots` fp32, CPU | stock | 0.979 / 0.9996 | 0.972 | 0.957 | 4 of 5 | 15 of 15 |
+| `--mask-empty-slots` fp16, GPU | stock | 0.941 / 0.997 | 0.944 | 0.933 | 0 of 5 | 15 of 15 |
+| `--mask-empty-slots` fp16, Neural Engine | stock | 0.900 / 0.991 | 0.907 | 0.894 | 0 of 5 | 15 of 15 |
 
 The bounds are a mask IoU of at least 0.95 and cosines of at least 0.99 on every frame. The reports are in
 [`results/`](results).
@@ -140,6 +143,8 @@ What the rows show:
   attention, because the memory attention's key and value projections have biases. That matters most in the first
   frames after a prompt, while the bank is filling (frames 1–6 for memories, 1–15 for pointers). Masks stay close
   (mean IoU 0.98), but they are not stock EdgeTAM's.
+- **Masking the empty slots tracks like stock EdgeTAM.** The one fp32 miss is a tie between two candidates on one
+  frame of the gap sequence.
 
 ## Speed
 
@@ -175,9 +180,8 @@ These packages make that behavior explicit:
 `parity --attend-empty-slots` pads PyTorch's bank the same way. The "padded" rows of [Accuracy](#accuracy) are
 against it, and the "stock" rows show what attending the slots costs.
 
-`convert --mask-empty-slots` builds packages that mask the empty slots as stock EdgeTAM does. Use them when stock
-tracking matters more than speed. On the Neural Engine their propagator takes about 89 ms instead of 35, because
-the masked graph runs the decoder's tail on the CPU.
+`convert --mask-empty-slots` masks the empty (all-zero) slots as stock EdgeTAM does. The mask is computed from the
+bank inside the graph, so the propagator stays on the Neural Engine at about 1 ms more than the default.
 
 ## Compared with the community conversion
 

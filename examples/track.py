@@ -85,17 +85,13 @@ def main():
             spatial = np.zeros((1, 7, 512, 64), np.float32)
             positions = np.zeros((1, 7, 512, 64), np.float32)
             pointers = np.zeros((1, 16, 256), np.float32)
-            # Read only by packages built with --mask-empty-slots; the default ones attend the empty slots.
-            bias = np.full((1, 1, 1, 3648), -30000.0, np.float32)
 
             def place(entry, slot, row):
                 spatial[0, slot] = entry[0][0]
                 positions[0, slot] = entry[1][0] + temporal[row]
-                bias[..., slot * 512:(slot + 1) * 512] = 0
 
             def pointer(entry, slot):
                 pointers[0, slot] = entry[2][0]
-                bias[..., 3584 + slot * 4:3584 + slot * 4 + 4] = 0
 
             place(seed, 6, 6)
             pointer(seed, 0)
@@ -108,7 +104,7 @@ def main():
                 "high_res_feature_0": features["high_res_feature_0"],
                 "high_res_feature_1": features["high_res_feature_1"],
                 "spatial_bank": spatial.astype(np.float16), "spatial_positions": positions.astype(np.float16),
-                "pointer_bank": pointers.astype(np.float16), "attention_bias": bias.astype(np.float16)})
+                "pointer_bank": pointers.astype(np.float16), "attention_bias": np.zeros((1, 1, 1, 3648), np.float16)})
             recent = (recent + [(out["memory_features"], out["memory_positions"], out["object_pointer"])])[-15:]
         logits = Image.fromarray(out["high_res_mask"][0, 0].astype(np.float32), "F").resize(frame.size, Image.BILINEAR)
         mask = Image.fromarray(((np.asarray(logits) > 0) * 255).astype(np.uint8))

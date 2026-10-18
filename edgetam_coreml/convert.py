@@ -27,10 +27,9 @@ code written for it runs these; what is new is added:
   row 6: a conditioning frame).
 - Propagator (a tracked frame): `raw_vision_features`, `high_res_feature_0/1`, the bank — `spatial_bank` and
   `spatial_positions` [1, 7, 512, 64] (memory positions plus the slot's temporal row), `pointer_bank` [1, 16, 256],
-  `attention_bias` [1, 1, 1, 3648] (0 for a filled slot, -30000 for an empty one: 512 per spatial slot, then 4 per
-  pointer; read only with `--mask-empty-slots`, otherwise empty slots are attended, see `Propagator`) → the
-  initializer's outputs for the best of the three masks plus that mask's `memory_features` and `memory_positions`.
-  The community package's `rotary_weight` input is gone; rotary positions are fixed.
+  `attention_bias` [1, 1, 1, 3648] (not read; kept for the community interface) → the initializer's outputs for the
+  best of the three masks plus that mask's `memory_features` and `memory_positions`. The community package's
+  `rotary_weight` input is gone; rotary positions are fixed.
 
 Shared by the initializer and the propagator: the object score masks every mask (-1024 when the object is not
 there) and swaps the pointer for the learned no-object pointer, as SAM2Base does.
@@ -78,14 +77,17 @@ def rotate(x, cos, sin):
 
 def attend(attn, q, k, v, q_rot=None, k_rot=None, bias=None):
     """One of SAM 2's single-head attentions (`Attention`, `RoPEAttention`, `RoPEAttentionv2`) with fixed rotary
-    tables and an additive bias over the keys."""
+    tables and an optional additive bias [1, keys], written out because the Neural Engine drops SDPA's `attn_mask`."""
     assert attn.num_heads == 1
     q, k, v = attn.q_proj(q), attn.k_proj(k), attn.v_proj(v)
     if q_rot is not None:
         q = rotate(q, *q_rot)
     if k_rot is not None:
         k = rotate(k, *k_rot)
-    out = F.scaled_dot_product_attention(q[:, None], k[:, None], v[:, None], attn_mask=bias)
+    if bias is not None:
+        logits = (q * q.shape[-1] ** -0.5) @ k.transpose(1, 2) + bias[:, None, :]
+        return attn.out_proj(torch.softmax(logits, dim=-1) @ v)
+    out = F.scaled_dot_product_attention(q[:, None], k[:, None], v[:, None])
     return attn.out_proj(out[:, 0])
 
 
@@ -306,13 +308,15 @@ class Propagator(torch.nn.Module):
                 pointer_bank, attention_bias):
         model = self.model
         attention = model.memory_attention
-        # By default the bank's empty slots are not masked: they are attended like any other (zero memory, zero
-        # positions) on every backend, and `attention_bias` is not read. That is what the Neural Engine does anyway —
-        # its compiled graph drops an attention mask that comes in as an input — so this keeps the backends alike and
-        # independent of the compiler. `mask_empty_slots` masks them as PyTorch does (-100 is enough: the logits stay
-        # within ±31); the masked graph runs the decoder's tail on the CPU, which doubles the propagator's time on the
-        # Neural Engine.
-        bias = attention_bias.clamp(min=-100.0) if self.mask_empty_slots else None
+        # Empty slots (all-zero memory or pointer) are attended by default; `mask_empty_slots` gives their keys -100,
+        # enough as the logits stay within ±31.
+        bias = None
+        if self.mask_empty_slots:
+            spatial = (spatial_bank.abs().amax(dim=(2, 3)) > 0).float()  # [1, 7]
+            pointers = (pointer_bank.abs().amax(dim=2) > 0).float()  # [1, 16]
+            filled = torch.cat([spatial[:, :, None].expand(1, 7, 512).reshape(1, 7 * 512),
+                                pointers[:, :, None].expand(1, 16, 4).reshape(1, 64)], dim=1)
+            bias = (filled - 1) * 100.0
         memory = torch.cat([spatial_bank.reshape(1, 7 * 512, 64), pointer_bank.reshape(1, 64, 64)], dim=1)
         memory_pos = torch.cat(
             [spatial_positions.reshape(1, 7 * 512, 64), torch.zeros_like(pointer_bank.reshape(1, 64, 64))], dim=1)
@@ -463,7 +467,7 @@ def main():
     parser.add_argument("--smooth-seed-memory", action="store_true",
                         help="memory encoder input down- and upsampled as a mask prompt's (MemoryEncoder)")
     parser.add_argument("--mask-empty-slots", action="store_true",
-                        help="mask the bank's empty slots with attention_bias, as PyTorch does (Propagator)")
+                        help="mask the bank's empty (all-zero) slots, as PyTorch does (Propagator)")
     args = parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
     fp32 = set(args.fp32.split(",")) - {"none", ""}

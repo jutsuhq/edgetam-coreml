@@ -160,16 +160,13 @@ def track_coreml(cm, jpegs, folder, seed):
         spatial = np.zeros((1, 7, 512, 64), np.float32)
         positions = np.zeros((1, 7, 512, 64), np.float32)
         pointers = np.zeros((1, 16, 256), np.float32)
-        bias = np.full((1, 1, 1, 3648), -30000.0, np.float32)
 
         def place(entry, slot, row):
             spatial[0, slot] = entry[0][0]
             positions[0, slot] = entry[1][0] + temporal[row]
-            bias[..., slot * 512:(slot + 1) * 512] = 0
 
         def point(pointer, slot):
             pointers[0, slot] = pointer[0]
-            bias[..., 3584 + slot * 4:3584 + slot * 4 + 4] = 0
 
         place(seed_entry, 6, 6)
         point(seed_entry[2], 0)
@@ -180,7 +177,7 @@ def track_coreml(cm, jpegs, folder, seed):
         out = cm.run(NAMES[3], {
             "raw_vision_features": enc["raw_vision_features"], "high_res_feature_0": enc["high_res_feature_0"],
             "high_res_feature_1": enc["high_res_feature_1"], "spatial_bank": spatial,
-            "spatial_positions": positions, "pointer_bank": pointers, "attention_bias": bias})
+            "spatial_positions": positions, "pointer_bank": pointers, "attention_bias": np.zeros((1, 1, 1, 3648))})
         recent.append((out["memory_features"], out["memory_positions"], out["object_pointer"]))
         results.append(dict(enc=enc, logits=out["high_res_mask"], score=float(out["object_score"].ravel()[0]),
                             pointer=out["object_pointer"], memory=out["memory_features"],
