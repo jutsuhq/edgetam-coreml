@@ -49,9 +49,20 @@ To track an object:
     --video clip.mp4 --point 400,300
 ```
 
-This writes `masks/00000.png…` and an overlay for each frame. `--video` is a video file or a folder of JPEGs, and
-`--point` is a pixel on the first frame. Add `--negative X,Y` (repeatable) to exclude something. A single click picks
-the best of three nested masks (a shirt rather than the whole person), so use more points to get the whole object.
+This writes `masks/00000.png…` and an overlay for each frame (`--no-overlay` writes the masks alone). `--video` is a
+video file or a folder of JPEGs, and
+`--point` is a pixel on the start frame (frame 0 by default). Add `--negative X,Y` (repeatable) to exclude something.
+A single click picks the best of three nested masks (a shirt rather than the whole person), so use more points to get
+the whole object.
+
+`--start N` puts the prompt on frame N instead of frame 0, and `--direction forward|backward|both` chooses where the
+tracker goes from there. `backward` walks from the prompt frame to frame 0, and `both` runs the two passes from the
+same seed with separate memory banks, the way SAM 2 propagates in either direction:
+
+```bash
+~/work/edgetam/venv/bin/python examples/track.py --models ~/work/edgetam/out \
+    --video clip.mp4 --start 300 --direction both --point 400,300
+```
 
 The demo above is the surfer clip at 15 fps, cropped to 960×540, with one click:
 
@@ -59,6 +70,23 @@ The demo above is the surfer clip at 15 fps, cropped to 960×540, with one click
 ffmpeg -t 22 -i surf.ogv -vf fps=15,crop=960:540:640:270 -q:v 2 frames/%05d.jpg
 ~/work/edgetam/venv/bin/python examples/track.py --models ~/work/edgetam/out --video frames --point 632,345
 ```
+
+### GUI
+
+[`ui/`](ui/) is a local web UI over the same loop: choose the work folder, run the `convert.sh` initialization, open a
+video, click points on the prompt frame, and export while a progress bar follows the frames. The masks play back over
+the source video as they are written, so the tinted overlay JPEGs are off by default. It runs `convert.sh` and `examples/track.py`
+itself, so its output is identical to the commands above.
+
+```bash
+cd ui
+npm install
+npm run dev        # http://localhost:5173
+```
+
+For a fixed local app instead of the dev server: `npm run build && npm start` (http://127.0.0.1:8765). It needs
+macOS, Node 22.12+, `ffmpeg` on `PATH`, and the same work folder `convert.sh` produces. Settings, including the work
+folder and the export folder, are kept in `.local/ui-settings.json`; the server listens on `127.0.0.1` only.
 
 ## The packages
 
@@ -93,10 +121,11 @@ The docstring of [`edgetam_coreml/convert.py`](edgetam_coreml/convert.py) has ev
 [`examples/track.py`](examples/track.py) is the whole loop, with coremltools alone:
 
 1. Run the image encoder on every frame.
-2. On the prompted frame, run the initializer with the click, then the memory encoder on its mask (binarized). That
-   gives the seed memory and pointer.
-3. On every later frame, run the propagator with the bank. Its mask is the answer, and its memory and pointer join
-   the bank.
+2. On the prompt frame (`--start`), run the initializer with the click, then the memory encoder on its mask
+   (binarized). That gives the seed memory and pointer.
+3. On every later frame in that direction, run the propagator with the bank. Its mask is the answer, and its memory
+   and pointer join the bank. `--direction backward` walks down to frame 0, and `both` makes two passes from the same
+   seed, each with its own bank.
 
 The bank is assembled the way SAM 2 does it:
 
@@ -239,6 +268,7 @@ edgetam_coreml/
   speed.py               latency per package and compute unit
   upstream.py            the pinned EdgeTAM commit and checkpoint, and the predictor builder
 examples/track.py        tracking from a click with coremltools alone
+ui/                     the local Solid + Vite GUI (see ui/README.md)
 results/                 parity reports and speed
 docs/                    the demo animation
 ```
