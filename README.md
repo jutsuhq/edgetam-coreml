@@ -2,7 +2,8 @@
 
 Meta's [EdgeTAM](https://github.com/facebookresearch/EdgeTAM) video object tracker, converted to four Core ML
 packages that run on the Apple Neural Engine. Click an object once, and it is tracked through the video
-at about 49 ms a frame on an M4.
+at about 49 ms a frame on an M4. On Windows and Linux with an NVIDIA GPU, the same tracker runs in Rust on ONNX Runtime's
+CUDA provider in [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx).
 
 ![A river surfer tracked through spray and camera motion from one click on the first frame](docs/demo.webp)
 
@@ -245,6 +246,7 @@ docs/                    the demo animation
 
 ## Related
 
+- [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx): the same tracker on Windows and Linux, in Rust on ONNX Runtime's CUDA provider
 - [Jutsu Studio](https://github.com/jutsuhq/jutsu-studio): the open-source Higgsfield desktop app for Mac
 - [Swapjutsu](https://github.com/jutsuhq/swapjutsu-seedance-character-swap): free character swap for Mac, no watermark
 - [Content Factory](https://github.com/jutsuhq/content-factory): open-source faceless video generator for Shorts, TikTok and Reels
