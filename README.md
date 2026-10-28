@@ -247,6 +247,7 @@ docs/                    the demo animation
 ## Related
 
 - [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx): the same tracker on Windows and Linux, in Rust on ONNX Runtime's CUDA provider
+- [Kawarimi](https://github.com/jutsuhq/kawarimi-local-character-swap): local AI character swap for Windows and Linux built on edgetam-onnx
 - [Jutsu Studio](https://github.com/jutsuhq/jutsu-studio): the open-source Higgsfield desktop app for Mac
 - [Swapjutsu](https://github.com/jutsuhq/swapjutsu-seedance-character-swap): free character swap for Mac, no watermark
 - [Content Factory](https://github.com/jutsuhq/content-factory): open-source faceless video generator for Shorts, TikTok and Reels
