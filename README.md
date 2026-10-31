@@ -3,7 +3,8 @@
 Meta's [EdgeTAM](https://github.com/facebookresearch/EdgeTAM) video object tracker, converted to four Core ML
 packages that run on the Apple Neural Engine. Click an object once, and it is tracked through the video
 at about 49 ms a frame on an M4. On Windows and Linux with an NVIDIA GPU, the same tracker runs in Rust on ONNX Runtime's
-CUDA provider in [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx).
+CUDA provider in [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx). It is the tracker inside
+[Swapjutsu](https://jutsustudio.com/swapjutsu/), the free character swap for Mac from Jutsu Studio.
 
 ![A river surfer tracked through spray and camera motion from one click on the first frame](docs/demo.webp)
 
@@ -246,13 +247,17 @@ docs/                    the demo animation
 
 ## Related
 
-- [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx): the same tracker on Windows and Linux, in Rust on ONNX Runtime's CUDA provider
-- [Kawarimi](https://github.com/jutsuhq/kawarimi-local-character-swap): local AI character swap for Windows and Linux built on edgetam-onnx
-- [Jutsu Studio](https://github.com/jutsuhq/jutsu-studio): the open-source Higgsfield desktop app for Mac
-- [Swapjutsu](https://github.com/jutsuhq/swapjutsu-seedance-character-swap): free character swap for Mac, no watermark
-- [Content Factory](https://github.com/jutsuhq/content-factory): open-source faceless video generator for Shorts, TikTok and Reels
-- [Higgsfield Gateway](https://github.com/jutsuhq/higgsfield-gateway): a budget-capped Higgsfield API gateway on Cloudflare Workers
-- [AI video API prices](https://github.com/jutsuhq/video-api-prices): what one second of AI video costs at 30+ providers, updated daily
+Other open-source projects from [Jutsu Studio](https://jutsustudio.com/):
+
+- [Jutsu Studio](https://github.com/jutsuhq/jutsu-studio): the open-source Higgsfield desktop app for Mac · [jutsustudio.com](https://jutsustudio.com/)
+- [Swapjutsu](https://github.com/jutsuhq/swapjutsu-seedance-character-swap): free character swap for Mac, no watermark · [jutsustudio.com/swapjutsu](https://jutsustudio.com/swapjutsu/)
+- [Kawarimi](https://github.com/jutsuhq/kawarimi-local-character-swap): free local AI character swap for Windows and Linux, no cloud · [jutsustudio.com/kawarimi](https://jutsustudio.com/kawarimi/)
+- [Content Factory](https://github.com/jutsuhq/content-factory): open-source faceless video generator for Shorts, TikTok and Reels · [jutsustudio.com/content-factory](https://jutsustudio.com/content-factory/)
+- [edgetam-onnx](https://github.com/jutsuhq/edgetam-onnx): the same tracker in Rust on ONNX Runtime CUDA, for Windows and Linux
+- [Higgsfield Gateway](https://github.com/jutsuhq/higgsfield-gateway): a budget-capped Higgsfield API gateway on Cloudflare Workers · [jutsustudio.com/blog/higgsfield-api-production](https://jutsustudio.com/blog/higgsfield-api-production/)
+- [Seedance 2.5 Prompt Skill](https://github.com/jutsuhq/higgsfield-seedance-prompt-skill): a Claude skill that writes Seedance 2.5 prompts for Higgsfield · [jutsustudio.com/blog/seedance-prompt-skill](https://jutsustudio.com/blog/seedance-prompt-skill/)
+- [AI video API prices](https://github.com/jutsuhq/video-api-prices): what one second of AI video costs at 30+ providers, updated daily · [jutsustudio.com/video-api-pricing](https://jutsustudio.com/video-api-pricing/)
+- [Open Source Higgsfield](https://github.com/jutsuhq/open-source-higgsfield): every #OpenSourceHiggsfield challenge project, by category · [jutsustudio.com/open-source-higgsfield](https://jutsustudio.com/open-source-higgsfield/)
 - [awesome-higgsfield](https://github.com/jutsuhq/awesome-higgsfield): tools, SDKs, agent skills and apps for Higgsfield
 
 ## License
